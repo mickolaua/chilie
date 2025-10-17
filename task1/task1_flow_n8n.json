@@ -1,0 +1,570 @@
+{
+  "name": "My optimized workflow",
+  "nodes": [
+    {
+      "parameters": {},
+      "name": "Start",
+      "type": "n8n-nodes-base.start",
+      "typeVersion": 1,
+      "position": [
+        -1888,
+        96
+      ],
+      "id": "6ac4f68e-dd61-44c3-97f2-1f3928286944"
+    },
+    {
+      "parameters": {
+        "jsCode": "const records = [];\nconst statuses = ['завершен', 'в ожидании', 'возвращен', 'отменен', 'приостановлен', 'неизвестен'];\nconst currencies = ['USD', 'EUR', 'GBP', 'RUR', 'JPY', '', 'INVALID', 'RUB'];\n\nfor (let i = 0; i < 8; i++) {\n  let email = `user${i}@example.com`;\n  if (i % 10 === 0) email = `invalid-email-${i}`;\n  if (i % 25 === 0) email = `USER${i}@EXAMPLE.COM`;\n  if (i % 30 === 0) email = ``;\n  if (i % 45 === 0) email = `user${i}@`;\n\n  let amount = Math.floor(Math.random() * 500);\n  if (i % 50 === 0) amount = -100;\n  if (i % 75 === 0) amount = null;\n  if (i % 100 === 0) amount = \"NaN\";\n  if (i % 125 === 0) amount = \"12.5\";\n\n  let currency = currencies[i % currencies.length];\n  if (i % 200 === 0) currency = null;\n\n  let debugBlob = '';\n  let lorem1mb = '';\n  if (i % 20 === 0) {\n    debugBlob = 'DEBUG: ' + 'x'.repeat(10000);\n    lorem1mb = 'Lorem ipsum '.repeat(5000);\n  }\n\n  records.push({\n    json: {\n      customer_email: email,\n      amount: amount,\n      currency: currency,\n      status: statuses[i % statuses.length],\n      debug_blob: debugBlob,\n      lorem_1mb: lorem1mb,\n      timestamp: new Date().toISOString(),\n      random_seed: Math.random()\n    }\n  });\n}\nreturn records;"
+      },
+      "name": "Code",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1696,
+        96
+      ],
+      "id": "cde65b49-cae8-49f4-b42f-a7200c941524",
+      "notesInFlow": false
+    },
+    {
+      "parameters": {
+        "unit": "seconds"
+      },
+      "name": "Wait",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [
+        -1488,
+        96
+      ],
+      "id": "7c7bc904-d643-4161-937a-a4debdbd4097",
+      "webhookId": "48e1f7a3-6c49-4a5f-818d-e126f77b16c0"
+    },
+    {
+      "parameters": {
+        "jsCode": "const emailRegex = /^[a-zA-Z0-9.!#$%&'*+\\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;\nconst sortedItems = [...items].sort(() => Math.random() - 0.5);\n\nsortedItems.sort((a, b) => {\n  const emailA = a.json.customer_email || '';\n  const emailB = b.json.customer_email || '';\n  return emailB.localeCompare(emailA);\n});\n\nconst filtered = sortedItems.filter(item => emailRegex.test(item.json.customer_email || ''));\n\nreturn filtered;"
+      },
+      "name": "Code 1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1280,
+        96
+      ],
+      "id": "90245bdf-b77e-43d6-af5d-6b322d5e3de9"
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "customer_email",
+              "value": "={{$json.customer_email ? $json.customer_email.toLowerCase().trim() : ''}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Set 1",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        -1120,
+        96
+      ],
+      "id": "e89bc9ec-ce6a-4066-81f3-a48f1ad64b94"
+    },
+    {
+      "parameters": {
+        "values": {
+          "number": [
+            {
+              "name": "amount",
+              "value": "={{Number($json.amount) || 0}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Set 2",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        -960,
+        96
+      ],
+      "id": "fe947520-b855-4606-a7d0-9019eb7271f2"
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "currency",
+              "value": "={{($json.currency || '').toUpperCase().trim()}}"
+            },
+            {
+              "name": "status",
+              "value": "={{($json.status || '').trim()}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Set 3",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        -800,
+        96
+      ],
+      "id": "7591b175-c39a-4751-8021-7613e6b6322c"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "60a09129-ba2d-4fc2-a4d7-1f265ec51821",
+              "leftValue": "=\n{{$json.customer_email || ''}}",
+              "rightValue": ".*@.*\\.",
+              "operator": {
+                "type": "string",
+                "operation": "regex"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "name": "IF 1",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -304,
+        96
+      ],
+      "id": "39c72fb7-ab50-45b7-a031-ff99fe21b774"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "7ecb61c3-27b2-4414-82e7-86e46190eaf7",
+              "leftValue": "",
+              "rightValue": "=",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "name": "IF 2",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -496,
+        -368
+      ],
+      "id": "b8ac66ab-2a8a-48d3-8cc9-a18e95f50a97"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "number": [
+            {
+              "value1": "={{$json.amount}}",
+              "operation": "larger",
+              "value2": 0
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "IF 3",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -784,
+        -448
+      ],
+      "id": "425d68f7-99fd-43e4-bb79-fa9c07085150"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "number": [
+            {
+              "value1": "={{$json.amount}}",
+              "operation": "isNotEmpty"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "IF 4",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -432,
+        -224
+      ],
+      "id": "b4903c68-c1d6-4460-966e-73b6d4da734e"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.currency}}",
+              "operation": "equal",
+              "value2": "USD"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "IF 5",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -208,
+        -352
+      ],
+      "id": "f92f9cb5-2565-4374-91d9-1ea6b83fbcde"
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "currency_normalized",
+              "value": "={{$json.currency === 'RUR' ? 'RUB' : $json.currency}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Set 4",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        -640,
+        96
+      ],
+      "id": "0530cf58-ab1a-4741-8b5f-34245fb27739"
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "currency_final",
+              "value": "={{$json.currency === 'RUR' ? 'RUR' : $json.currency}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Set 5",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        -480,
+        96
+      ],
+      "id": "9467128f-535f-4876-b2f8-01472927957a"
+    },
+    {
+      "parameters": {
+        "operation": "toFile",
+        "options": {}
+      },
+      "name": "Spreadsheet File 1",
+      "type": "n8n-nodes-base.spreadsheetFile",
+      "typeVersion": 1,
+      "position": [
+        880,
+        96
+      ],
+      "id": "55384342-e7ef-4e9a-b25c-fe6d8d5e8b4e"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "name": "Spreadsheet File 2",
+      "type": "n8n-nodes-base.spreadsheetFile",
+      "typeVersion": 1,
+      "position": [
+        816,
+        -112
+      ],
+      "id": "add0ab87-c194-45b2-af83-1e783bad34b8"
+    },
+    {
+      "parameters": {
+        "url": "=https://httpbin.org/get?email={{$json.customer_email}}&random={{$json.random_seed}}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "name": "HTTP Request 1",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        1120,
+        304
+      ],
+      "id": "ac5ca038-bb64-4bfc-a473-a1de9245e872"
+    },
+    {
+      "parameters": {
+        "url": "=https://httpbin.org/get?verify={{$json.customer_email}}&timestamp={{$json.timestamp}}",
+        "options": {}
+      },
+      "name": "HTTP Request 2",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        1296,
+        304
+      ],
+      "id": "bd2988db-4f66-4cc7-ab19-8115995b9645"
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "customer_level",
+              "value": "verified"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Set Customer Level",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        1456,
+        304
+      ],
+      "id": "28be31fa-42fa-4e82-8377-31e7fc283a4a"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "name": "Send JSON",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        1376,
+        528
+      ],
+      "id": "b80a1d1a-30aa-4462-94c9-60f8c791e2d0"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Start": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Code 1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code 1": {
+      "main": [
+        [
+          {
+            "node": "Set 1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set 1": {
+      "main": [
+        [
+          {
+            "node": "Set 2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set 2": {
+      "main": [
+        [
+          {
+            "node": "Set 3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set 3": {
+      "main": [
+        [
+          {
+            "node": "Set 4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF 1": {
+      "main": [
+        [],
+        []
+      ]
+    },
+    "IF 2": {
+      "main": [
+        [
+          {
+            "node": "IF 5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF 5": {
+      "main": [
+        []
+      ]
+    },
+    "Set 4": {
+      "main": [
+        [
+          {
+            "node": "Set 5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set 5": {
+      "main": [
+        [
+          {
+            "node": "IF 1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Spreadsheet File 1": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request 1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request 1": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request 2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request 2": {
+      "main": [
+        [
+          {
+            "node": "Set Customer Level",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Customer Level": {
+      "main": [
+        [
+          {
+            "node": "Send JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Europe/Moscow",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "versionId": "623a4500-a8ae-4534-910d-c1e9cdec71ce",
+  "meta": {
+    "instanceId": "a87f808bcb64cb8c4869849ee72c547aee9521aa2b2dfbefa10342f50a8e6e4d"
+  },
+  "id": "A1JymSbvUbgJS40p",
+  "tags": []
+}
