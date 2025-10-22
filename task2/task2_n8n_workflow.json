@@ -1,0 +1,428 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Task 2\n\nСоздать систему автоматического размещения QR-кодов на изображениях в зависимости от выбранного сценария. Система должна находить свободное место на базовом изображении и размещать QR-код в оптимальной позиции согласно заданному сценарию. \n\nПользовательский путь: я как пользователь хочу выбирать картинку в чате и получать этот вариант картинки и свой уникальный пригласительный QR код.",
+        "height": 400,
+        "width": 288
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -496,
+        -448
+      ],
+      "typeVersion": 1,
+      "id": "4c27fe34-9dd4-46de-8a15-73f3532e5db9",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "resource": "image",
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.5-flash-image-preview",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.5-flash-image-preview (Nano Banana)"
+        },
+        "prompt": "={{ $json.message.text || 'random 1k image'}}",
+        "options": {
+          "sampleCount": 1
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [
+        352,
+        -320
+      ],
+      "id": "aaf8c2ce-199b-49f1-b70f-25c6c1826886",
+      "name": "Generate an image",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "7T01cxSn3Gc5MTDf",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "updates": [
+          "*"
+        ],
+        "additionalFields": {
+          "download": false
+        }
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -112,
+        -304
+      ],
+      "id": "fbb50ff3-4aff-4c60-93d7-ec17f995a2cd",
+      "name": "Telegram Trigger",
+      "webhookId": "4e154720-cb0a-499f-aa9c-76911a1c5e23",
+      "credentials": {
+        "telegramApi": {
+          "id": "MwJgXkiHDIQ0nfKv",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "a17ec3fd-2e96-4f37-975f-d941f7e5ae00",
+                    "leftValue": "={{ $json.message.text }}",
+                    "rightValue": "gen",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "gen"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "aba22dcc-c712-4e67-9449-e04496938511",
+                    "leftValue": "={{ $json.message.text }}",
+                    "rightValue": "pick",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "pick"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        96,
+        -304
+      ],
+      "id": "12afa512-8528-4a7d-bbfc-0a61b77f048c",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        352,
+        -112
+      ],
+      "id": "d8867f2d-a3c5-41f9-bd67-f18622ff3833",
+      "name": "Async request to QR code service",
+      "retryOnFail": true,
+      "maxTries": 5
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        576,
+        -112
+      ],
+      "id": "76d2c74f-b723-4ca8-8de8-1574d4a6c124",
+      "name": "Get job id and check status",
+      "retryOnFail": true,
+      "maxTries": 5
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.ready }}",
+                    "rightValue": "ready",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "51b5e3d3-4200-4dcf-8ff6-29d828b24d4e"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "ready"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "a17ec3fd-2e96-4f37-975f-d941f7e5ae00",
+                    "leftValue": "={{ $json.ready }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "empty",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "in process"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        800,
+        -112
+      ],
+      "id": "90bd4a20-0b48-45bb-93c2-5779d1cecdf9",
+      "name": "QR Code Job Status"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1056,
+        -96
+      ],
+      "id": "7accf96b-c67d-4f3c-b076-8d5c969afcab",
+      "name": "Wait",
+      "webhookId": "dc07cd20-301b-4552-8e72-b850c4e90351"
+    },
+    {
+      "parameters": {
+        "resource": "callback",
+        "additionalFields": {
+          "text": "",
+          "url": ""
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        576,
+        -320
+      ],
+      "id": "e8d45993-411d-494f-a5f2-7ddad1f41c79",
+      "name": "Send Generated Image to User",
+      "webhookId": "0650a381-73cb-4723-99f5-ae669a9a2597",
+      "credentials": {
+        "telegramApi": {
+          "id": "MwJgXkiHDIQ0nfKv",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "callback",
+        "additionalFields": {
+          "text": "",
+          "url": ""
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1056,
+        -288
+      ],
+      "id": "03e7b4fb-b3e1-4201-869c-19dc7ea74e09",
+      "name": "Send Generated Image with Enbedded QR code",
+      "webhookId": "0650a381-73cb-4723-99f5-ae669a9a2597",
+      "credentials": {
+        "telegramApi": {
+          "id": "MwJgXkiHDIQ0nfKv",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## Workflow scenario (architecture only)\n\nA user sends a message to the Telegram bot (so there is a chat in which the bot is admin and user is in the chat). The message will be either `gen` to generate a new image or `pick` to pick current image. Images are generated by Gemini 2.5. After the image was picked by the user, we send the image to the QR code embedding service. The service uses openCV to find free space on the image, generates the qr code containing the link to the chat. Finally, the image with embedded qr code is send to the user.\n\nThere is an alternative. We can also download a new \"generated\" image from S3 bucket. For example, we can assign a number for each image name, e.g. image1.png, image2.png, etc, and just iterate on each \"genaration\" step.",
+        "height": 288,
+        "width": 576
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -496,
+        -784
+      ],
+      "typeVersion": 1,
+      "id": "880c1ad8-7a48-4cea-abbf-9697bbe036d9",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.s3",
+      "typeVersion": 1,
+      "position": [
+        352,
+        -512
+      ],
+      "id": "dfcc8ed6-61c2-45cf-b1b6-35869d8fd551",
+      "name": "Download a file"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Generate an image": {
+      "main": [
+        [
+          {
+            "node": "Send Generated Image to User",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Generate an image",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Async request to QR code service",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Async request to QR code service": {
+      "main": [
+        [
+          {
+            "node": "Get job id and check status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get job id and check status": {
+      "main": [
+        [
+          {
+            "node": "QR Code Job Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "QR Code Job Status": {
+      "main": [
+        [
+          {
+            "node": "Send Generated Image with Enbedded QR code",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Async request to QR code service",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "2511252d-002c-4a98-98e3-09f57df22424",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "628ea23eb9c6c47ba4dba244e028ae069efef3bea1ec56ba3386e81bca2b5d5d"
+  },
+  "id": "1KQozot16ZnzWpRr",
+  "tags": []
+}
