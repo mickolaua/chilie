@@ -1,0 +1,446 @@
+{
+  "name": "task3.1_n8n_workflow_my_automatizer",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "8b9032b7-a84d-4c53-8f78-ec72b6ab0be5",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "url": "https://goweather.xyz/weather/Moscow",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        208,
+        0
+      ],
+      "id": "fc192db6-ffa6-4eb5-afa1-c65f300e243c",
+      "name": "Weather at Moscow",
+      "retryOnFail": true,
+      "maxTries": 5,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Loop over input items and add a new field called 'myNewField' to the JSON of each one\nconst weather = $input.first().json;\nconst currentTempCelsius = Number(weather.temperature.replace(\" °C\", \"\"));\nconst currentWindSpeedKmh = Number(weather.wind.replace(\" km/h\", \"\"));\n\nreturn { temp: currentTempCelsius, wind: currentWindSpeedKmh };"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        496,
+        -16
+      ],
+      "id": "68b23e48-4f66-4cfa-ba72-741372d0a896",
+      "name": "Parse Weather JSON"
+    },
+    {
+      "parameters": {
+        "amount": 1,
+        "unit": "hours"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1360,
+        192
+      ],
+      "id": "77d41346-4ee5-429d-81b1-e59d6feadf23",
+      "name": "Wait 1hr",
+      "webhookId": "27ccc82c-fe9a-4b73-a8e6-597ed742c29a"
+    },
+    {
+      "parameters": {
+        "amount": 15
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        400,
+        144
+      ],
+      "id": "2901026f-1fac-4390-84d4-375771904169",
+      "name": "Wait 15 sec",
+      "webhookId": "27ccc82c-fe9a-4b73-a8e6-597ed742c29a"
+    },
+    {
+      "parameters": {
+        "chatId": "862259243",
+        "text": "=Current weather conditions at Moscow:\nTemp is {{ $json.temp }} C, Wind speed is {{ $json.wind }} km/h. \nWearing recomendations:\n{{ $json.output }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1616,
+        -192
+      ],
+      "id": "ca98c479-a5f7-457b-a953-5d81b6d94102",
+      "name": "Send a text message",
+      "webhookId": "d2a06c41-8a7e-4b2e-b8ab-029a332cea85",
+      "credentials": {
+        "telegramApi": {
+          "id": "MwJgXkiHDIQ0nfKv",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## Нужно развернуть у себя любой автоматизатор на свое усмотрение:\n\n1. Объяснить, почему выбор пал на него ?\n2. Выстроить проект, где запускается калькулятор на твоем компе,\n3. В калькуляторе складываются данные из гугл таблицы за выбранный период (цифры и периоды выбираются самостоятельно),\n4. Полученные результаты из калькулятора записываются в графовую БД,\n5. Сгенерировать на основе этих цифр изображение,\n6* Выстроить процесс поиска похожих картинок с такими цифрами.",
+        "height": 416,
+        "width": 368
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -464,
+        -256
+      ],
+      "typeVersion": 1,
+      "id": "2a48756f-81e8-43b3-9673-3116ce4f3fcf",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        -256
+      ],
+      "id": "2c112360-acf6-4577-9fcd-43090dc319fa",
+      "name": "Telegram Trigger",
+      "webhookId": "104e922e-4c7d-4158-97be-be4342989c5c",
+      "credentials": {
+        "telegramApi": {
+          "id": "MwJgXkiHDIQ0nfKv",
+          "name": "Telegram account"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "fa358558-baa7-4a4d-bb58-0eccc9ade227",
+              "leftValue": "={{ $json.message.text }}",
+              "rightValue": "/weather",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        208,
+        -256
+      ],
+      "id": "18037003-6e33-447f-ace7-26f48d5fd83b",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "content": "## My Automation:\n\nThis workflow tells a Moscow Telegram user what to wear depending on the mean weather conditions in the city. \n\n### Motivation\nI want getting relevant wearing recommendations in the convinient way, since I do not want to go outside to check how do I feel in current weather conditions (too lazy for that).\n\n### How it works?\n\nImplemented two variants.\n\n1. Just request basic (wind and temp) info from goweather.xyz (free access, no signup) and manually implement wear recommendation message depending on wind and temp.\n2. Second variant is to feed the goweather response to AI, which may give better recommendation (more accurate probably)\n\nFinally, the user retrieves the message from the bot.",
+        "height": 464,
+        "width": 688
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -464,
+        -752
+      ],
+      "typeVersion": 1,
+      "id": "f3199eaf-d904-474b-aeec-ee5a8b39da2d",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        784,
+        128
+      ],
+      "id": "540acffe-cd1a-4307-89fc-a36b54a5a356",
+      "name": "Ollama Chat Model",
+      "credentials": {
+        "ollamaApi": {
+          "id": "MLDSfhFkerwAIJNQ",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        992,
+        128
+      ],
+      "id": "cf5a5dec-2b36-4757-b8df-7382884119be",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "7T01cxSn3Gc5MTDf",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Loop over input items and add a new field called 'myNewField' to the JSON of each one\nconst weather = $input.first().json;\nconst wind = weather.wind;\nconst temp = weather.temp;\n\nvar msg = \"\";\nvar windStatus = \"\";\nvar tempStatus = \"\";\nvar windMessage = \"\";\nvar tempMessage = \"\";\n\nif (wind < 8) {\n  windStatus = \"light\";\n  windMessage = `The wind is light (${wind} km/h).`\n} else if (wind > 8 && wind < 20) {\n  windStatus = \"moderate\";\n  windMessage = `The wind is moderate (${wind} km/h).`\n} else if (wind >= 20){\n  windStatus = \"strong\";\n  windMessage = `The wind is strong (${wind} km/h). Consider wearing a hat. Remember your cap or umbrella may blown away.`\n}\n\nif (temp < 5) {\n  tempStatus = \"cold\";\n  tempMessage = `It is cold outside (${temp} C). Consider wearing a Canadian goose coat.`\n} else if (temp > 5 && wind < 13) {\n  tempStatus = \"moderate\";\n  tempMessage = `It is moderately warm outside (${temp} C). Consider wearing a coat, optionally with a hood.`\n} else if (temp >= 13) {\n  tempStatus = \"warm\"\n  tempMessage = `It is warm outside (${temp} C). Consider just wearing a hoodie or a light coat.`\n}\n\nmsg = `Weather now\\n--\\n${tempMessage}${windMessage}\\n--\\n`\n\nreturn { output: msg };"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1104,
+        -128
+      ],
+      "id": "a824bbf8-ac34-416c-b8fd-29cce869a3bf",
+      "name": "Create the message manually"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=What are your recommendations to wear if outside temperature is {{ $json.temp }} deg celcius and wind speed is {{ $json.wind }} km/h? Consider casual wearing. Be simple just give the answer under 3 sentences long.",
+        "needsFallback": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        800,
+        -240
+      ],
+      "id": "f77cd0ea-cf3a-42e9-98a4-985ebcf708a3",
+      "name": "Recommendation AI",
+      "alwaysOutputData": true,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1360,
+        -240
+      ],
+      "id": "8cf28e8c-08d7-41bb-ac0b-f7a1b8458039",
+      "name": "Merge",
+      "notesInFlow": false
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Weather at Moscow",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Weather at Moscow": {
+      "main": [
+        [
+          {
+            "node": "Parse Weather JSON",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait 15 sec",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Weather JSON": {
+      "main": [
+        [
+          {
+            "node": "Recommendation AI",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait 1hr": {
+      "main": [
+        [
+          {
+            "node": "Weather at Moscow",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait 15 sec": {
+      "main": [
+        [
+          {
+            "node": "Weather at Moscow",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a text message": {
+      "main": [
+        [
+          {
+            "node": "Wait 1hr",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Weather at Moscow",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Recommendation AI",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Recommendation AI",
+            "type": "ai_languageModel",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Create the message manually": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Recommendation AI": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ],
+        [
+          {
+            "node": "Create the message manually",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "4df80867-069a-4932-96e0-c2fec8615d91",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "628ea23eb9c6c47ba4dba244e028ae069efef3bea1ec56ba3386e81bca2b5d5d"
+  },
+  "id": "ZfbtDaYERWuPBVVD",
+  "tags": []
+}
