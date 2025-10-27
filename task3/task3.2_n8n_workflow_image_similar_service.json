@@ -1,0 +1,987 @@
+{
+  "name": "My workflow 2",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Task 3.2\n2. Выстроить проект, где запускается калькулятор на твоем компе,\n3. В калькуляторе складываются данные из гугл таблицы за выбранный период (цифры и периоды выбираются самостоятельно),\n4. Полученные результаты из калькулятора записываются в графовую БД,\n5. Сгенерировать на основе этих цифр изображение\n6. Выстроить процесс поиска похожих картинок с такими цифрами.",
+        "height": 320,
+        "width": 320
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -384,
+        -352
+      ],
+      "typeVersion": 1,
+      "id": "b0401326-3332-428d-94b2-e9660c7a54ce",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -96,
+        0
+      ],
+      "id": "4b012494-1642-40bf-b3ad-179a66b54010",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "jsCode": "function getRandomInt(min, max) {\n  min = Math.ceil(min);\n  max = Math.floor(max);\n  return Math.floor(Math.random() * (max - min + 1)) + min;\n}\n\nfunction getRandomDate(start_date, end_date) {\n  return new Date(start_date.getTime() + Math.random() * (end_date.getTime() - start_date.getTime()));\n}\n\nconst nameVariants = [ \"John\", \"James\", \"Tanja\", \"Ilya\", \"Sergiy\" ];\nfunction generatePayment () {\n  const index = getRandomInt(0, nameVariants.length-1);\n  const name = nameVariants[index];\n  const currentIsoDateTime = getRandomDate(new Date(\"2025-01-01\"), new Date(\"2025-09-01\"));\n  console.log(\"hui\");\n  // const age = getRandomInt(18, 80);\n  const amount = getRandomInt(100, 10000)\n  return {client: name, date: currentIsoDateTime.getTime(), dateISO: currentIsoDateTime.toISOString(), amount : amount}\n}\n\nconst userCount = 300;\nvar payments = []\nfor (var i = 0; i < userCount; i++) {\n  var payment = generatePayment();\n  payment[\"id\"] = i+1;\n  payments.push(payment)\n}\n\nreturn payments;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        320,
+        0
+      ],
+      "id": "1d61ef6a-b79f-4b69-ae2b-80de902bfacf",
+      "name": "Fake Data Generation"
+    },
+    {
+      "parameters": {
+        "operation": "deleteRows",
+        "dataTableId": {
+          "__rl": true,
+          "value": "fjGgRPQ0DiTQY4SM",
+          "mode": "list",
+          "cachedResultName": "test",
+          "cachedResultUrl": "/projects/H1ZTxJUrTeJNdyS6/datatables/fjGgRPQ0DiTQY4SM"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "condition": "gte",
+              "keyValue": "1"
+            }
+          ]
+        },
+        "options": {
+          "dryRun": false
+        }
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        112,
+        -208
+      ],
+      "id": "d18d7a3f-fe9f-4aa4-ad36-32d02e9d78e4",
+      "name": "Free Table"
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "dataTableId": {
+          "__rl": true,
+          "value": "fjGgRPQ0DiTQY4SM",
+          "mode": "list",
+          "cachedResultName": "test",
+          "cachedResultUrl": "/projects/H1ZTxJUrTeJNdyS6/datatables/fjGgRPQ0DiTQY4SM"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyValue": "={{ $json.id }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "amount": "={{ $json.amount }}",
+            "name": "={{ $json.client }}",
+            "dateISO": "={{ $json.dateISO }}",
+            "date": "={{ DateTime.fromMillis($json.date) }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "amount",
+              "displayName": "amount",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "dateISO",
+              "displayName": "dateISO",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "date",
+              "displayName": "date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "dryRun": false
+        }
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        592,
+        0
+      ],
+      "id": "e8070c37-b118-40e0-9a64-4dc71bf90799",
+      "name": "Upsert row(s)"
+    },
+    {
+      "parameters": {
+        "jsCode": "const allPayments = [];\nfor (const item of $input.all()) {\n if (item.json.name === \"Sergiy\") {\n   allPayments.push(item.json);\n } \n}\n\nfunction groupPaymentsByWeek(payments) {\n    const groupedPayments = {};\n    \n    payments.forEach(payment => {\n        const paymentDate = new Date(payment.date);\n        const weekStart = new Date(paymentDate);\n        weekStart.setDate(paymentDate.getDate() - paymentDate.getDay()); // Move to start of the week (Sunday)\n        \n        // Format the key by week\n        const weekKey = `${weekStart.toISOString().split('T')[0]} - ${new Date(weekStart).setDate(weekStart.getDate() + 6)}`\n        \n        if (!groupedPayments[weekKey]) {\n            groupedPayments[weekKey] = { start: weekStart, end: new Date(weekStart).setDate(weekStart.getDate() + 6), totalAmount: 0 };\n        }\n        \n        groupedPayments[weekKey].totalAmount += payment.amount;\n    });\n\n    // Convert result into a more user-friendly array format\n    return Object.keys(groupedPayments).map(key => ({\n        start: groupedPayments[key].start.getTime(),\n        end: new Date(groupedPayments[key].end).getTime(),\n        totalAmount: groupedPayments[key].totalAmount,\n        name: \"Sergiy\"\n    })).sort((a, b) => new Date(a.start) - new Date(b.start));\n}\n\nconst paymentPeriods = groupPaymentsByWeek(allPayments);\nreturn paymentPeriods;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        816,
+        0
+      ],
+      "id": "86aa7444-6b38-4b96-934e-1be2dd2cdddd",
+      "name": "Sergiy's Payments grouped by periods"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Loop over each payment\nvar statements = [];\nvar id = 0;\nfor (const item of $input.all()) {\n\n  // we only care about totalAmount and sequential id\n  const statement = {\n    \"statement\": \"CREATE (p:Payment {id, totalAmount: $totalAmount}) RETURN p\",\n    \"parameters\": {\n      \"id\": id++,\n      \"totalAmount\": item.json.totalAmount,\n    }\n  };\n  statements.push(statement);\n}\nreturn {\"statements\" : statements};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1040,
+        0
+      ],
+      "id": "75d8d100-73d3-4ec3-8647-12e2d6018be2",
+      "name": "Form statements for Neo4j"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:7474/db/neo4j/tx/commit",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "statements",
+              "value": "={{ $json.statements }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1280,
+        0
+      ],
+      "id": "0d75e184-b58b-4f77-b653-3bb5c094495e",
+      "name": "Insert data to Neo4j",
+      "retryOnFail": true,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:7474/db/neo4j/tx/commit",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{ \"statements\": [ { \"statement\": \"MATCH (n) DETACH DELETE n\" } ] }",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        112,
+        0
+      ],
+      "id": "d50156a8-3886-4ef0-bb50-c8de0538cc12",
+      "name": "Clean Neo4j DB",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "a",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "=a",
+          "mode": "id"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        448,
+        -192
+      ],
+      "id": "0a5fa503-010c-41f8-807e-e55fcb71bf26",
+      "name": "Append or update row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "iCk1FEIaO70S4S3S",
+          "name": "Google Sheets account"
+        }
+      },
+      "disabled": true,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "content": "*Instead of using local spreadsheet we can use Google Spreadsheets*"
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        384,
+        -272
+      ],
+      "typeVersion": 1,
+      "id": "8e037c7a-9494-4db4-af79-7409addce5e5",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "1e1bedaf-c095-4705-8f43-0d3e5e49d3b4",
+              "leftValue": "={{ $json.errors }}",
+              "rightValue": "",
+              "operator": {
+                "type": "array",
+                "operation": "empty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1488,
+        -96
+      ],
+      "id": "484e3a18-4d7a-4bba-82ba-cb0bda381fc3",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "errorMessage": "=Errors with Neo4j occured: {{ $json.errors }}"
+      },
+      "type": "n8n-nodes-base.stopAndError",
+      "typeVersion": 1,
+      "position": [
+        1664,
+        48
+      ],
+      "id": "b7f8d58a-177e-47b7-a97d-1c400eac7885",
+      "name": "Stop and Error"
+    },
+    {
+      "parameters": {
+        "url": "http://localhost:10000/generate",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "prompt",
+              "value": "=Generate an image of number {{ $json.totalEarnings }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2400,
+        -64
+      ],
+      "id": "d139a1e3-9287-45e8-81e4-fab4d7faf116",
+      "name": "API call to local Stable Diffusion 1.5"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "93dd3e10-e6ec-4e17-9d72-0025a00eee8e",
+              "name": "image",
+              "value": "={{ $json.candidates[0].content.parts[1].inline_data.data }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2400,
+        -256
+      ],
+      "id": "8695cc11-5a95-439d-890a-3eb27eab473b",
+      "name": "Extract image"
+    },
+    {
+      "parameters": {
+        "resource": "image",
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.5-flash-image",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.5-flash-image (Nano Banana)"
+        },
+        "prompt": "=Generate an image of number {{ $json.totalEarnings }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [
+        2128,
+        -304
+      ],
+      "id": "82dee34d-4c4f-40fa-8adf-d9eb983dd11c",
+      "name": "Generate an image (output already b64 jpeg)",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "7T01cxSn3Gc5MTDf",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "mode": "chooseBranch"
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1776,
+        -272
+      ],
+      "id": "2b144fb9-73ae-4eae-861f-d3daa947fbf1",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "content": "Grouping Sergiy's payments by a week and write them into Neo4J",
+        "height": 320,
+        "width": 784
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        848,
+        -128
+      ],
+      "typeVersion": 1,
+      "id": "7fc4fe67-7f7f-4f4c-a1af-cead1b14224e",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "content": "Generate images either using Nano Banana or local Stable Diffusion (the first one has higher priority)\n",
+        "height": 544,
+        "width": 640
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1968,
+        -384
+      ],
+      "typeVersion": 1,
+      "id": "660adfa5-41c3-4d50-84cc-771681ffe578",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "content": "Clean the Neo4j DB and generate fake data",
+        "height": 320,
+        "width": 752
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        32,
+        -32
+      ],
+      "typeVersion": 1,
+      "id": "eef6268b-6edc-409a-9023-9826be2682c4",
+      "name": "Sticky Note4"
+    },
+    {
+      "parameters": {
+        "operation": "write",
+        "dataPropertyName": "image",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        3136,
+        -128
+      ],
+      "id": "8a361162-b1c3-42b3-84d0-69c4e271422e",
+      "name": "Save Images"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        2112,
+        432
+      ],
+      "id": "a06e5fce-f4f3-47c6-a3e8-6cc43b759df1",
+      "name": "Open Images"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        2768,
+        -224
+      ],
+      "id": "7f136cf1-6d52-4fe0-94d8-952423d54849",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "command": "=base64 -d {{ $json.fileName }}"
+      },
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        3344,
+        -128
+      ],
+      "id": "d87f25f7-2d05-4387-926b-d92be4b8498e",
+      "name": "Decode the B64 encoded image"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:7474/db/neo4j/tx/commit",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"statements\": [\n    {\n      \"statement\": \"MATCH (p:Payment {id: $json.id}) SET r.image_path = \\\"{{ $json.fileName }}\\\" RETURN p\"\n    }\n  ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3520,
+        -32
+      ],
+      "id": "44911024-defa-484f-9e77-84da73a0abc9",
+      "name": "Update Payment Records with Generated Image Path",
+      "retryOnFail": true,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "content": "Saving decoded images on disk and update Neo4j records to include image path for further query for similar images\n\n",
+        "height": 544,
+        "width": 1056
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        2704,
+        -336
+      ],
+      "typeVersion": 1,
+      "id": "368ca6bf-b6e3-4089-9c28-0cbd4b18d2e2",
+      "name": "Sticky Note5"
+    },
+    {
+      "parameters": {
+        "content": "Add relationships between number images (e.g. using abs(difference) < 10%).",
+        "height": 304,
+        "width": 336
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        3920,
+        -336
+      ],
+      "typeVersion": 1,
+      "id": "fc93c53a-9a13-4358-becd-da32643efe43",
+      "name": "Sticky Note6"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:7474/db/neo4j/tx/commit",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"statements\": [\n    {\n      \"statement\": \"MATCH (p1:Payment), (p2:Payment) WHERE p1.start < p2.start AND ABS(p1.totalAmount -p2.totalAmount) < (0.1 * p1.totalEarnings) MERGE (p1)-[:CLOSE_EARNINGS]->(p2)\"\n    }\n  ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        4016,
+        -224
+      ],
+      "id": "3d6d7071-0aec-49c6-abce-53c27eeae291",
+      "name": "Update Payment Records with Relations",
+      "retryOnFail": true,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "content": "Search for all similar images\nand retrieve their ids amd image paths",
+        "height": 352,
+        "width": 928
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        2032,
+        336
+      ],
+      "typeVersion": 1,
+      "id": "16e6faf0-7a32-4876-9e81-1d84e3d15599",
+      "name": "Sticky Note7"
+    },
+    {
+      "parameters": {
+        "resource": "image",
+        "operation": "analyze",
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.5-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.5-flash"
+        },
+        "text": "What's number in the image? Give me only number (not text, just digits).",
+        "inputType": "binary",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [
+        2336,
+        432
+      ],
+      "id": "b15d7b41-26a9-4cc6-b9ca-67975c7f1794",
+      "name": "Analyze image for number",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "7T01cxSn3Gc5MTDf",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:7474/db/neo4j/tx/commit",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"statements\": [\n    {\n      \"statement\": \"MATCH (p:Payment) WHERE ABS(p.totalEarnings - $targetEarnings) < (0.1 * $targetEarnings) MATCH (p) -[:CLOSE_EARNINGS]- (similarPayment) RETURN DISTINCT similarPayment.id, similarPayment.image_path\",\n      \"parameters\": {\n        \"targetEarnings\": {{ $json.number }}\n      }\n    }\n  ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2576,
+        432
+      ],
+      "id": "e99e601a-e34b-431b-8a39-048c6199e467",
+      "name": "Find Similar Images",
+      "retryOnFail": true,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "content": "# Solution workflow (NOT COMPLETELY WORKING, see below)\n\nThe solution is not completely working cause I unable to run some services like Gemini for image generation. Therefore, I did as much effort as I could to create a maximally working solution, which can be slightly modified for actual run.\n\n# How does it operate?\n1. Fake Payment Data is generated using JS node and written to local spredsheet (in production Google Spreadsheets should be used). The date have several fields: client (client name), date (creation datetime), dateISO (creation datetime as ISO formatted string)\n2. For client Sergiy payment is grouped by week and added. Grouped payments has start field for start datetime of the group, end field for end datetime of the group, totalAmount for the sum of individual payments in the group and just sequential id.\n3. The grouped payments is fed into Neo4j DB keeping only id and totalAmount fields\n4. Using Gemini or local Stable Diffusion (see how deploy it in the README.md models images of totalAmount numbers are generated and written on disk\n5. The Neo4j DB is update to provide relationships between payments based on totalAmount similarity (with 10% tolerance)\n6. To find number similar to the one presented in the new image (read from disk):\n6.1 Gemini analyzes it first to extract the number from the image\n6.2 Then the Neo4j DB is queried for similar numbers using totalAmount similarity (with 10% tolerance)\n6.3 As the result, id and image_path fields are provided (image_path is the stores paths to images similar to input one)\n\nAfter that we can build some frontend that provides GUI for #6. For a convinient access.",
+        "height": 672,
+        "width": 752
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        16,
+        -992
+      ],
+      "typeVersion": 1,
+      "id": "44ff5bfc-79f0-4b04-9e5f-e835f76c5172",
+      "name": "Sticky Note8"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Clean Neo4j DB",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fake Data Generation": {
+      "main": [
+        [
+          {
+            "node": "Upsert row(s)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Free Table": {
+      "main": [
+        []
+      ]
+    },
+    "Upsert row(s)": {
+      "main": [
+        [
+          {
+            "node": "Sergiy's Payments grouped by periods",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sergiy's Payments grouped by periods": {
+      "main": [
+        [
+          {
+            "node": "Form statements for Neo4j",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert data to Neo4j": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Stop and Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Form statements for Neo4j": {
+      "main": [
+        [
+          {
+            "node": "Insert data to Neo4j",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clean Neo4j DB": {
+      "main": [
+        [
+          {
+            "node": "Fake Data Generation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append or update row in sheet": {
+      "main": [
+        [],
+        []
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ],
+        [
+          {
+            "node": "Stop and Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "API call to local Stable Diffusion 1.5": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate an image (output already b64 jpeg)": {
+      "main": [
+        [
+          {
+            "node": "Extract image",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "API call to local Stable Diffusion 1.5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract image": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Generate an image (output already b64 jpeg)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "API call to local Stable Diffusion 1.5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Images": {
+      "main": [
+        [
+          {
+            "node": "Decode the B64 encoded image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Open Images": {
+      "main": [
+        [
+          {
+            "node": "Analyze image for number",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "Update Payment Records with Relations",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Save Images",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Decode the B64 encoded image": {
+      "main": [
+        [
+          {
+            "node": "Update Payment Records with Generated Image Path",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Payment Records with Generated Image Path": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyze image for number": {
+      "main": [
+        [
+          {
+            "node": "Find Similar Images",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Europe/Moscow",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "versionId": "27581262-d29b-460d-99de-a43a52a1b86c",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "628ea23eb9c6c47ba4dba244e028ae069efef3bea1ec56ba3386e81bca2b5d5d"
+  },
+  "id": "fZ8rt3CxNBneQ8K7",
+  "tags": []
+}
